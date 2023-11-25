@@ -7,7 +7,7 @@ def accept_incoming_connections():
     while True:
         client, client_address = SERVER.accept()
         print("%s:%s has connected." % client_address)
-        client.send(bytes("Greetings user! Please type your name and press enter.", "utf8"))
+        client.send(bytes("Hãy nhập tên đội của mình bên dưới và nhấn Enter để bắt đầu.", "utf8"))
         addresses[client] = client_address
         Thread(target=handle_client, args=(client,)).start()
 
@@ -16,7 +16,7 @@ def handle_client(client):  # Takes client socket as argument.
     """Handles a single client connection."""
 
     name = client.recv(BUFSIZ).decode("utf8") #Bytes sent in UTF-8 format
-    welcome = 'Welcome %s! If you ever want to quit, type {quit} to exit.' % name
+    welcome = 'Chào mừng đội thi %s đến với cuộc thi Hành trình khám phá tri thức! \n Gõ {quit} để thoát.' % name
     client.send(bytes(welcome, "utf8"))
     msg = "%s has joined the chat!" % name
     broadcast(bytes(msg, "utf8"))
