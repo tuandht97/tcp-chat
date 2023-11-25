@@ -31,7 +31,7 @@ def on_closing(event=None):
 
 def auto_send_message():
     message = "Dành quyền trả lời"
-    sound_file = "C:/Users/admin/Desktop/code/4. chuong.mp3"  # Đường dẫn tới file âm thanh
+    sound_file = "./4. chuong.mp3"  # Đường dẫn tới file âm thanh
     sound_data, fs = sf.read(sound_file, dtype='float32')  # Đọc dữ liệu âm thanh từ file
     sd.play(sound_data, fs)  # Phát âm thanh
     client_socket.send(bytes(message, "utf8"))
