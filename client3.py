@@ -112,6 +112,7 @@ input_frame.pack()
 
 entry_field = tkinter.Entry(input_frame, textvariable=my_msg, width=50)
 entry_field.grid(row=0, column=0, padx=5, pady=5, sticky="we")
+entry_field.bind("<Return>", send)
 
 send_button = tkinter.Button(input_frame, text="Gửi câu trả lời", command=send)
 send_button.grid(row=0, column=1, padx=5, pady=5)
