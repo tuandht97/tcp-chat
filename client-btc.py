@@ -9,6 +9,7 @@ def receive():
         try:
             msg = client_socket.recv(BUFSIZ).decode("utf8")  # Decoding of data is done on the client side
             msg_list.insert(tkinter.END, msg)
+            msg_list.see(tkinter.END)
         except OSError:  # Possibly client has left the chat.
             break
 
