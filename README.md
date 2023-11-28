@@ -64,11 +64,11 @@ pip install pyinstaller
 ## Sử dụng
 1. Khởi động máy chủ bằng cách chạy server.py
 ```bash
-python.py server2.py
+python.py server.py
 ```
 2. Client có thể kết nối với máy chủ bằng cách chạy client.py
 ```bash
-python client3.py
+python client.py
 ```
 3. Nhập tên và bắt đầu gửi tin nhắn cho các client khác.
 
