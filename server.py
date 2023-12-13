@@ -1,123 +1,73 @@
-import tkinter as tk
-import socket
-import threading
-
-window = tk.Tk()
-window.title("Server")
+"""Server for Multithreaded (asynchronous) Chat Application."""
+from socket import AF_INET, socket, SOCK_STREAM    #SOCK_STREAM used to create TCP protocols AF_INET= Address from the internet
+from threading import Thread
 
 
-HOST = "127.0.0.1"
-PORT = 8080
-client_name = ""
-clients = []
-client_names = []
+def accept_incoming_connections():
+    while True:
+        client, client_address = SERVER.accept()
+        print("%s:%s has connected." % client_address)
+        client.send(bytes("Hãy nhập tên đội của mình bên dưới và nhấn Enter để bắt đầu.", "utf8"))
+        addresses[client] = client_address
+        Thread(target=handle_client, args=(client,)).start()
 
-def send_recv_client_msg(client_connection, client_ip_addr):
-    global server, client_name, clients, clients_addr
-    client_msg = ""
-    client_name = client_connection.recv(4096)
-    client_name = client_name.decode("utf-8")
-    print(type(client_name))
-    welcome_message = "Welcome " + client_name + ". Use 'exit' to quit"
-    client_connection.send(welcome_message.encode("utf-8"))
-    client_names.append(client_name)
 
-    update_client_names_display(client_names) # method, TODO
+def handle_client(client):  # Takes client socket as argument.
+    """Handles a single client connection."""
+
+    name = client.recv(BUFSIZ).decode("utf8") #Bytes sent in UTF-8 format
+    welcome = 'Chào mừng đội thi %s đến với cuộc thi Hành trình khám phá tri thức! \n Gõ {quit} để thoát.' % name
+    client.send(bytes(welcome, "utf8"))
+    msg = "%s has joined the chat!" % name
+    broadcast(bytes(msg, "utf8"))
+    clients[client] = name
 
     while True:
-        print("Waiting to receive message from a client")
-        data = client_connection.recv(4096)
-        if not data: break
-        if data == "exit": break
+        msg = client.recv(BUFSIZ)
+        if msg != bytes("{quit}", "utf8"):
+            broadcast(msg, name+": ")
+        else:
+            client.send(bytes("{quit}", "utf8"))
+            client.close()
+            del clients[client]
+            broadcast(bytes("%s has left the chat." % name, "utf8"))#Prints if user has left the app
+            break
 
-        client_msg = data.decode("utf-8")
-        idx = get_client_index(clients, client_connection)
-        sending_client_name = client_names[idx]
-
-        for client in clients:
-            if client != client_connection:
-                message_to_other_clients = sending_client_name + "->" + client_msg
-                client.send(message_to_other_clients.encode("utf-8"))
-
-    # remove client
-    idx = get_client_index(clients, client_connection)
-    del client_names[idx]
-    del clients[idx]
-    client_connection.close()
-
-    update_client_names_display(client_names) # TODO
-
-def get_client_index(client_list, curr_client):
-    for i in range(0, len(client_list)):
-        if client_list[i] == curr_client:
-            return i
-    return -1 
-
-def update_client_names_display(name_list):
-    tkDisplay.config(state=tk.NORMAL)
-    tkDisplay.delete('1.0', tk.END)
-    for client in name_list:
-        tkDisplay.insert(tk.END, client+"\n")
-    tkDisplay.config(state=tk.DISABLED)
-
-
-def accept_clients(some_server):
-    print("got to accept clients function")
-    while True:
-        client, addr = some_server.accept()
-        print("Server accepted a client")
-        clients.append(client)
-        threading._start_new_thread(send_recv_client_msg, (client,addr),)
-
-def start_server():
-    startButton.config(state=tk.DISABLED)
-    stopButton.config(state=tk.NORMAL)
+def handle_error(sock, error):
+    """Handles socket error and removes the socket from the list of clients."""
+    print("Socket error:", error)
+    sock.close()
+    if sock in clients:
+        clients.remove(sock)
+        
     
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    print("Created server socket")
-    server.bind((HOST, PORT))
-    server.listen(5)
-    print("Server is listening")
-    threading._start_new_thread(accept_clients, (server,))
+def broadcast(msg, prefix=""):  # prefix is for name identification.
+    """Broadcasts a message to all the clients."""
 
-    hostLabel["text"] = "Host: " + HOST
-    portLabel["text"] = "Port: " + str(PORT)
-
+    for sock in clients:
+        try:
+            sock.send(bytes(prefix, "utf8") + msg)
+        except socket.error as e:
+            # Handle the error (e.g., remove the socket from the list of clients)
+            handle_error(sock, e)
 
 
-def stop_server():
-    stopButton.config(state=tk.DISABLED)
-    startButton.config(state=tk.NORMAL)
+        
+clients = {}
+addresses = {}
 
-# top section has two buttons, one to start the server and one to stop it.
-topFrame = tk.Frame(window)
+HOST = ''
+PORT = 33000 #Random port no used
+BUFSIZ = 1024 # No of bytes that can be sent in a message stored in buffersize
+ADDR = (HOST, PORT)
 
-startButton = tk.Button(topFrame, text="Start", command=start_server)
-startButton.pack(side=tk.LEFT)
+SERVER = socket(AF_INET, SOCK_STREAM)
+SERVER.bind(ADDR) # Used to bind the IP Address and port no of a new client
 
-stopButton = tk.Button(topFrame, text="Stop", command=stop_server, state=tk.DISABLED)
-stopButton.pack()
-topFrame.pack(side=tk.TOP, pady=(5,0))
-
-# center frame displays host and port number of server 
-centerFrame = tk.Frame(window)
-hostLabel = tk.Label(centerFrame, text="Host: x.x.x.x")
-hostLabel.pack(side=tk.LEFT)
-portLabel = tk.Label(centerFrame, text="Port: ####")
-portLabel.pack()
-centerFrame.pack(side=tk.TOP, pady=(5,0))
-
-clientsFrame = tk.Frame(window)
-clientsLabel = tk.Label(clientsFrame, text="*****CONNECTED CLIENTS******")
-scrollBar = tk.Scrollbar(clientsFrame)
-scrollBar.pack(side=tk.RIGHT, fill=tk.Y)
-tkDisplay = tk.Text(clientsFrame, height=15, width=40)
-tkDisplay.pack(side=tk.LEFT, fill=tk.Y, padx=(5,0))
-
-#tkDisplay.insert(tk.END, "User 1\n")
-scrollBar.config(command=tkDisplay.yview)
-tkDisplay.config(yscrollcommand=scrollBar.set, background="#F4F6F7", highlightbackground="grey", state="disabled")
-clientsFrame.pack(side=tk.BOTTOM, pady=(5, 10))
-
-window.mainloop()
+if __name__ == "__main__":
+    SERVER.listen(5) # Max 5 connections will be accepted by multiple clients
+    print("Waiting for connection...")
+    ACCEPT_THREAD = Thread(target=accept_incoming_connections)
+    ACCEPT_THREAD.start()
+    ACCEPT_THREAD.join()
+    SERVER.close()
