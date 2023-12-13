@@ -2,13 +2,15 @@
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 import tkinter
+import re
 
 
 def receive():
     while True:
         try:
             msg = client_socket.recv(BUFSIZ).decode("utf8")  # Decoding of data is done on the client side
-            msg_list.insert(tkinter.END, msg)
+            msg_list.insert(tkinter.END, re.sub(r'\d{6}-', '', msg))
+            msg_list.see(tkinter.END) 
         except OSError:  # Possibly client has left the chat.
             break
 
@@ -16,7 +18,7 @@ def receive():
 def send(event=None):  # Event is passed by binders.
     msg = my_msg.get()
     my_msg.set("")  # Clears input field.
-    client_socket.send(bytes(msg, "utf8"))
+    client_socket.send(bytes("111111-" + msg, "utf8"))
     if msg == "{quit}":
         client_socket.close()
         top.destroy()
@@ -29,19 +31,19 @@ def on_closing(event=None):
 
 
 def send_count_khoidong(num):
-    message = "_________Khởi động - Câu {}".format(str(num))
+    message = "111111-_________Khởi động - Câu {}".format(str(num))
     my_msg.set(message)
     send()
     count_buttons[num-1].config(state=tkinter.DISABLED)
 
 def send_count_vcnv(num):
-    message = "_________VCNV - Câu {}".format(str(num))
+    message = "111111-_________VCNV - Câu {}".format(str(num))
     my_msg.set(message)
     send()
     count_buttons_vcnv[num-1].config(state=tkinter.DISABLED)
 
 def send_count_vedich(num):
-    message = "_________Về đích - Câu {}".format(str(num))
+    message = "111111-_________Về đích - Câu {}".format(str(num))
     my_msg.set(message)
     send()
     # count_buttons_vedich[num-1].config(state=tkinter.DISABLED)

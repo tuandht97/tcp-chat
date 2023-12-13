@@ -4,21 +4,53 @@ from threading import Thread
 import sounddevice as sd
 import soundfile as sf
 import tkinter
+import random
+import re
 
+user_id = ""  # Global variable to store user ID
 
 def receive():
+    global user_id  # Access the global variable
     while True:
         try:
             msg = client_socket.recv(BUFSIZ).decode("utf8")  # Decoding of data is done on the client side
-            msg_list.insert(tkinter.END, msg)
+            
+            # Tìm chuỗi "id" trong đầu vào
+            match = re.search(r'\d{6}', msg)
+
+            if match:
+                id_string = match.group(0)
+                if id_string == user_id or id_string == "111111":
+                    msg_list.insert(tkinter.END, re.sub(r'\d{6}-', '', msg))
+                else:
+                    temptMsg = re.sub(r'\d{6}-', '', msg)
+
+                    # Tách chuỗi thành các phần riêng biệt
+                    parts = temptMsg.split(": ")
+                    if len(parts) == 2:
+                        name = parts[0]
+                        msg = parts[1]
+
+                        # Thay đổi nội dung của "msg"
+                        if msg != "Bấm chuông":
+                            new_msg = "Đã đưa ra đáp án"
+                        else:
+                            new_msg = msg
+
+                        # Tạo chuỗi mới
+                        output_string = f"{name}: {new_msg}"
+                        msg_list.insert(tkinter.END, output_string)
+            
+            msg_list.see(tkinter.END) 
         except OSError:  # Possibly client has left the chat.
             break
 
 
 def send(event=None):  # Event is passed by binders.
+    global user_id  # Access the global variable
     msg = my_msg.get()
     my_msg.set("")  # Clears input field.
-    client_socket.send(bytes(msg, "utf8"))
+    client_socket.send(bytes(user_id + "-"  + msg, "utf8"))
     if msg == "{quit}":
         client_socket.close()
         top.destroy()
@@ -30,7 +62,7 @@ def on_closing(event=None):
     send()
 
 def auto_send_message():
-    message = "Dành quyền trả lời"
+    message = "111111-Bấm chuông"
     sound_file = "./4. chuong.mp3"  # Đường dẫn tới file âm thanh
     sound_data, fs = sf.read(sound_file, dtype='float32')  # Đọc dữ liệu âm thanh từ file
     sd.play(sound_data, fs)  # Phát âm thanh
@@ -48,6 +80,10 @@ def connect_to_server():
 
     global client_socket, ADDR
     ADDR = (host, port)
+
+    global user_id  # Access the global variable
+    # Generate a random ID for the user
+    user_id = str(random.randint(200000, 999999))
 
     client_socket = socket(AF_INET, SOCK_STREAM)
     client_socket.connect(ADDR)
