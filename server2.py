@@ -18,7 +18,7 @@ def handle_client(client):  # Takes client socket as argument.
     name = client.recv(BUFSIZ).decode("utf8") #Bytes sent in UTF-8 format
     welcome = '111111-Chào mừng đội thi %s đến với cuộc thi Hành trình khám phá tri thức! \n Gõ {quit} để thoát.' % name
     client.send(bytes(welcome, "utf8"))
-    msg = "111111-%s has joined the chat!" % name
+    msg = "111111-%s đã tham gia!" % name
     broadcast(bytes(msg, "utf8"))
     clients[client] = name
 
@@ -30,7 +30,7 @@ def handle_client(client):  # Takes client socket as argument.
             client.send(bytes("{quit}", "utf8"))
             client.close()
             del clients[client]
-            broadcast(bytes("111111-%s has left the chat." % name, "utf8"))#Prints if user has left the app
+            broadcast(bytes("111111-%s đã rời phòng." % name, "utf8"))#Prints if user has left the app
             break
 
 def handle_error(sock, error):
@@ -38,7 +38,9 @@ def handle_error(sock, error):
     print("Socket error:", error)
     sock.close()
     if sock in clients:
-        clients.remove(sock)
+        clients.pop(sock, None)
+        error_message = "111111-Một máy đã xảy ra lỗi, yêu cầu tổ kỹ thuật hỗ trợ"
+        broadcast(bytes(error_message, "utf8"))
         
     
 def broadcast(msg, prefix=""):  # prefix is for name identification.
@@ -47,7 +49,7 @@ def broadcast(msg, prefix=""):  # prefix is for name identification.
     for sock in clients:
         try:
             sock.send(bytes(prefix, "utf8") + msg)
-        except socket.error as e:
+        except Exception as e:
             # Handle the error (e.g., remove the socket from the list of clients)
             handle_error(sock, e)
 
