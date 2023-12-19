@@ -16,7 +16,7 @@ def handle_client(client):  # Takes client socket as argument.
     """Handles a single client connection."""
 
     name = client.recv(BUFSIZ).decode("utf8") #Bytes sent in UTF-8 format
-    welcome = '111111-Chào mừng đội thi %s đến với cuộc thi Hành trình khám phá tri thức! \n Gõ {quit} để thoát.' % name
+    welcome = '111111-Chào mừng đội thi %s đến với cuộc thi Hành trình khám phá tri thức 2023!' % name
     client.send(bytes(welcome, "utf8"))
     msg = "111111-%s đã tham gia!" % name
     broadcast(bytes(msg, "utf8"))
@@ -38,8 +38,9 @@ def handle_error(sock, error):
     print("Socket error:", error)
     sock.close()
     if sock in clients:
+        name = clients[sock]
         clients.pop(sock, None)
-        error_message = "111111-Một máy đã xảy ra lỗi, yêu cầu tổ kỹ thuật hỗ trợ"
+        error_message = "111111-Đội %s đã thoát." % name
         broadcast(bytes(error_message, "utf8"))
         
     
